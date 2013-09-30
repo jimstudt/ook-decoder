@@ -65,7 +65,7 @@ protocol and if you are lucky how to set the parameters to an already
 existing function to convert your pulse stream into an array of bytes.
 
 **wh1080** decodes weather information from Fine Offset wh1080/wh1081 based weather stations. These are sold under many brand names. Mine is an Ambient Weather. If you get 
-a burst or two of 88 pulses every 45 seconds, you are probably a wh1080.
+a burst or two of 88 pulses every 45 seconds, you are probably a wh1080. This saves a json file with the current observations and also writes periodic files of accumulated data.
 
 **???** Add the LaCrosse reader here.
 
@@ -88,3 +88,7 @@ If you would rather use a hardware 433MHz receiver you could dispense with the S
 ### C99 compiler ###
 Either gcc or clang works fine. It also needs to support the non-standard ({ }) *statement expression* extension. (That see's limited use and you could patch around it easily if you need to.) Just be happy I refrained from using blocks in clang for the sake of gcc users.
 
+Credits
+-------
+
+[rtl-433](https://github.com/merbanan/rtl_433) was helpful for getting started. It provides a great deal of analysis of the 433MHz signals.
