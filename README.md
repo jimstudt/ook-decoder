@@ -99,6 +99,21 @@ On an original BeagleBone at 250ksps ookd will consume about 30% of the CPU. Thi
 
 In general, ookd matters for performance, but the clients don't. The data reduction between the two is just too large for the clients to matter.
 
+### Building on Mac OS X ###
+
+Building rtl-sdr is a nuisance under Mac OS X. You will need to install a bunch of utilities. I made it build with:
+
+    $ sudo chmod 2775 /usr/local/include
+    $ brew install cmake
+    $ brew install pkgconfig
+    $ brew install libusb
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+    $ make install
+    
+
 Credits
 -------
 
