@@ -20,7 +20,11 @@ COMPILERFLAGS = $(COMPILERFLAGS_$(COMPILER))
 CFLAGS = $(COMPILERFLAGS) -Wall -Werror -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE=1 $(DEBUGFLAGS) $(FLOATFLAGS)
 DAEMON_LDLIBS = -lrtlsdr
 
-all : ookd ookdump wh1080
+all : daemon clients
+
+daemon : ookd
+
+clients : ookdump wh1080
 
 ookd : ookd.o rtl.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(DAEMON_LDLIBS) $(LDLIBS) -o $@
