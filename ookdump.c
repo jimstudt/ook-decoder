@@ -17,7 +17,7 @@ static void showHelp( FILE *f)
 	    "  -v | --verbose                        verbose logging\n"
 	    "  -a addr | --multicast-address addr    multicast address, default 236.0.0.1\n"
 	    "  -p port | --multicast-port port       multicast port, default 3636\n"
-	    "  -i addr | --multicast-interface addr  address of the multicast interface, default localhost\n"
+	    "  -i addr | --multicast-interface addr  address of the multicast interface, default 127.0.0.1\n"
 	    );
 }
 
@@ -26,7 +26,7 @@ int main( int argc, char **argv)
 {
     const char *multicastAddress = "236.0.0.1";
     const char *multicastPort = "3636";
-    const char *multicastInterface = "localhost";
+    const char *multicastInterface = "127.0.0.1";
 
     // Handle options
     for(;;) {
