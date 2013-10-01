@@ -1,0 +1,5 @@
+*.o
+gmon.out
+ookd
+ookdump
+wh1080
