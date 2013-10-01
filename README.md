@@ -43,6 +43,8 @@ split into two layers.
 
 ### Structure of ook-decoder ###
 
+![architecture diagram](img/architecture.png)
+
 **ookd** receives and analyzes the RF data looking for bursts of
 pulses. When it finds a pulse burst it multicasts the pulses to an
 arbitrary number of listens. ookd doesn't know anything
@@ -59,7 +61,7 @@ pulses, and the plausibility of the data to decide if it has received
 a valid message from a device it understands. It can then take
 whatever action it wishes.
 
-**ookdump** is a decoding process which characterizes and dumps received
+**ookdump** is a client which characterizes and dumps received
 bursts.  You will find it useful for understanding your device's
 protocol and if you are lucky how to set the parameters to an already
 existing function to convert your pulse stream into an array of bytes.
@@ -87,6 +89,15 @@ If you would rather use a hardware 433MHz receiver you could dispense with the S
 
 ### C99 compiler ###
 Either gcc or clang works fine. It also needs to support the non-standard ({ }) *statement expression* extension. (That see's limited use and you could patch around it easily if you need to.) Just be happy I refrained from using blocks in clang for the sake of gcc users.
+
+Notes
+-----
+
+### Performance ###
+
+On an original BeagleBone at 250ksps ookd will consume about 30% of the CPU. This is almost entirely because I am doing floating point math and I suspect it is all soft float because of my Debian variant. The clang code is faster than the gcc code with the compilers in Debian Wheezy.
+
+In general, ookd matters for performance, but the clients don't. The data reduction between the two is just too large for the clients to matter.
 
 Credits
 -------
