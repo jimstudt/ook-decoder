@@ -7,6 +7,7 @@
 #include <math.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 
@@ -81,9 +82,9 @@ static void recordPulse( unsigned n, unsigned rise, unsigned drop, unsigned end,
 	    } else {
 		int e = sendto( multicastSocket, data, len, 0, multicastSockaddr, multicastSockaddrLen);
 		if ( e < 0) {
-		    fprintf(stderr, "Failed to multicast pulse (%u bytes): %s\n", len, strerror(errno));
+		    fprintf(stderr, "Failed to multicast pulse (%zu bytes): %s\n", len, strerror(errno));
 		}
-		if ( verbose) fprintf(stderr,"Multicast %u pulse, %u bytes\n", burst->pulses, len);
+		if ( verbose) fprintf(stderr,"Multicast %u pulse, %zu bytes\n", burst->pulses, len);
 
 		free(data);
 	    }
@@ -244,6 +245,34 @@ static void exitNicely(int signum)
     }
 }
 
+static const char *humanName( struct sockaddr *addr, size_t len)
+{
+    static char buf[INET6_ADDRSTRLEN];
+    int e = getnameinfo( addr, len, buf, sizeof(buf),0,0,NI_NUMERICHOST);
+    if (e) return gai_strerror(e);
+    return buf;
+}
+
+// contain OS specific nonsense here
+static int setMulticastIF( int sock, const struct sockaddr *addr, size_t len)
+{
+#if __APPLE__
+    switch ( addr->sa_family) {
+      case AF_INET:
+	return setsockopt( sock, IPPROTO_IP, IP_MULTICAST_IF, 
+			   (char *)&(((struct sockaddr_in *)addr)->sin_addr), sizeof(struct in_addr));
+      default:
+	errno = EINVAL;
+	return -1;
+    }
+#elif __linux__
+    // Shouldn't this be a ip_mreqn or ip_mreq structure??
+    return setsockopt( sock, IPPROTO_IP, IP_MULTICAST_IF, (char *)addr, len);
+#else
+#error Unsupported OS in setMulticastIF
+#endif
+}
+
 // exit() on error
 static void setupNetworking( const char *address, const char *port, const char *interface)
 {
@@ -289,13 +318,14 @@ static void setupNetworking( const char *address, const char *port, const char *
 	}
 	// add a verbose print here
 
-	if ( setsockopt( sock, IPPROTO_IP, IP_MULTICAST_IF, (char *)ai[0].ai_addr, ai[0].ai_addrlen) < 0) {
-	    fprintf(stderr, "Failed to set multicast interface to %s: %s\n", interface, strerror(errno));
+	if ( setMulticastIF( sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+	    fprintf(stderr, "Failed to set multicast interface to %s (%s): %s\n", 
+		    interface, humanName(ai->ai_addr, ai->ai_addrlen), strerror(errno));
 	    exit(1);
 	}
 
 	// enable loopback so clients can be on this host
-	u_char loop=1;
+	uint8_t loop=1;
 	setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
 
 	freeaddrinfo(ai);

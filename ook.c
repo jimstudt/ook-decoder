@@ -138,7 +138,7 @@ int ook_open( const char *address, const char *port, const char *interface)
 	      memcpy( &group.ipv6mr_multiaddr, &((struct sockaddr_in6 *)multicast_ai->ai_addr)->sin6_addr, sizeof(struct in6_addr));
 	      group.ipv6mr_interface = 0;
 		  
-	      int r = setsockopt( sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (const void *)&group, sizeof(group));
+	      int r = setsockopt( sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (const void *)&group, sizeof(group));
 	      if ( r < 0) {
 		  fprintf(stderr,"Failed to join multicast group: %s\n", strerror(errno));
 		  goto Fail;
