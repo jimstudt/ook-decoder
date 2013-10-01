@@ -195,6 +195,7 @@ static void showHelp( FILE *f)
 	    "  -v | --verbose                        verbose logging\n"
 	    "  -a addr | --multicast-address addr    multicast address, default 236.0.0.1\n"
 	    "  -p port | --multicast-port port       multicast port, default 3636\n"
+	    "  -i addr | --multicast-interface addr  address of the multicast interface, default localhost\n"
 	    "  -r path | --recent path               path to most recent data, /tmp/current-weather.json\n"
 	    "  -P path | --periodic path             path to the periodic data, /tmp/weather\n"
 	    "                                        timestamp.json gets appended.\n"
@@ -220,6 +221,7 @@ int main( int argc, char **argv)
 	    { "help",    no_argument, 0, 'h' },
 	    { "multicast-address", required_argument, 0, 'a'},
 	    { "multicast-port", required_argument, 0, 'p' },
+	    { "multicast-interface", required_argument, 0, 'i' },
 	    { "recent", required_argument, 0, 'r' },
 	    { "periodic", required_argument, 0, 'P' },
 	    { "minutes", required_argument, 0, 'm' },
