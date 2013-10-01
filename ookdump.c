@@ -17,6 +17,7 @@ static void showHelp( FILE *f)
 	    "  -v | --verbose                        verbose logging\n"
 	    "  -a addr | --multicast-address addr    multicast address, default 236.0.0.1\n"
 	    "  -p port | --multicast-port port       multicast port, default 3636\n"
+	    "  -i addr | --multicast-interface addr  address of the multicast interface, default localhost\n"
 	    );
 }
 
@@ -35,6 +36,7 @@ int main( int argc, char **argv)
 	    { "help",    no_argument, 0, 'h' },
 	    { "multicast-address", required_argument, 0, 'a'},
 	    { "multicast-port", required_argument, 0, 'p' },
+	    { "multicast-interface", required_argument, 0, 'i' },
 	    { 0,0,0,0}
 	};
 
