@@ -7,6 +7,9 @@ Ook-decoder reads On-Off Keying radio data commonly used in the 433MHz ISM bands
 Status - alpha
 --------------
 
+ON HOLD: My test rig is 500 miles away and unreachable during winter months. The transmitter
+has failed, so no more development until the spring thaw comes and I can get a human out there.
+
 I'm just filling this repository now, you probably don't want to use it yet.
 
 Installing
