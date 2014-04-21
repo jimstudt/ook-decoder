@@ -104,7 +104,11 @@ In general, ookd matters for performance, but the clients don't. The data reduct
 
 ### Building on Mac OS X ###
 
-Building rtl-sdr is a nuisance under Mac OS X. You will need to install a bunch of utilities. I made it build with:
+You will need the rtl-sdr library to build. You can install this with:
+
+    $ brew install librtlsdr
+
+If you have to build rtl-sdr, you will need to install a bunch of utilities. I made it build with:
 
     $ sudo chmod 2775 /usr/local/include
     $ brew install cmake
