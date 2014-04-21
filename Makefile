@@ -22,11 +22,16 @@ CPPFLAGS = -MMD
 CFLAGS = $(COMPILERFLAGS) -Wall -Werror -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE=1 -D_DARWIN_C_SOURCE=1 $(DEBUGFLAGS) $(FLOATFLAGS)
 DAEMON_LDLIBS = -lrtlsdr
 
-all : daemon clients
+all : daemon clients go-clients
 
 daemon : ookd
 
-clients : ookdump wh1080
+clients : ookdump wh1080 
+
+go-clients : go/bin/ooklog
+
+go/bin/% : $(wildcard go/src/*/*.go )
+	( cd go ; GOPATH=`pwd` go install $(@:go/bin/%=%) )
 
 ookd : ookd.o rtl.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(DAEMON_LDLIBS) $(LDLIBS) -o $@
