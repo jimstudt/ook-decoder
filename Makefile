@@ -17,6 +17,8 @@ FLOATFLAGS = $(FLOATFLAGS_$(MACHINE)_$(COMPILER)) $(FLOATFLAGS_$(COMPILER))
 COMPILERFLAGS_gcc = -std=c99 
 COMPILERFLAGS = $(COMPILERFLAGS_$(COMPILER))
 
+CPPFLAGS = -MMD
+
 CFLAGS = $(COMPILERFLAGS) -Wall -Werror -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE=1 -D_DARWIN_C_SOURCE=1 $(DEBUGFLAGS) $(FLOATFLAGS)
 DAEMON_LDLIBS = -lrtlsdr
 
@@ -43,3 +45,5 @@ ookd.o : ook.h rtl.h
 ookdump.o wh1080.o : ook.h
 
 .PHONY : clean all
+
+include $(wildcard %.d)
