@@ -24,7 +24,7 @@ type Burst struct {
 
 type BurstHandler func( *Burst) bool
 
-func EncodeBurst( burst *Burst) ([]byte, error) {
+func (burst *Burst) Encode( ) ([]byte, error) {
 	buf := bytes.NewBuffer( []byte{} )
 
 	version := uint32( 0x36360001)
@@ -106,33 +106,34 @@ func DecodeBurst( data []byte ) (*Burst,int,error) {
 	return &Burst{ Position:time.Duration(position), Pulses:pulses},0,nil
 }
 
-func ListenTo( iface *net.Interface, addr *net.UDPAddr, handler BurstHandler) error {
+func ListenTo( iface *net.Interface, addr *net.UDPAddr, burstChannel chan *Burst) error {
 	conn,err := net.ListenMulticastUDP("udp", iface, addr)
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
 
-	buf := make( []byte, 65536)
+	body := func() {
+		defer conn.Close()
 
-	for {
-		count,err := conn.Read(buf)
-		if err != nil {
-			return err
-
-		}
-
-		burst,used,err := DecodeBurst( buf[0:count] )
-		if err != nil {
-			return err
-		}
-		_ = used 
+		buf := make( []byte, 65536)
 		
-		if ok := handler( burst); !ok {
-			break;
+		for {
+			count,err := conn.Read(buf)
+			if err != nil {
+				log.Fatalf("Bad read in ListenTo: %s", err.Error())
+			}
+			
+			burst,used,err := DecodeBurst( buf[0:count] )
+			if err != nil {
+				log.Printf("Bad decode in ListenTo: %s", err.Error())
+			}
+			_ = used 
+
+			burstChannel <- burst
 		}
-		
 	}
+
+	go body()
 
 	return nil
 }

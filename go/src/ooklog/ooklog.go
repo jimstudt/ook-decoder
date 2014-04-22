@@ -8,6 +8,8 @@ import (
 	"net"
 	"ook"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -18,6 +20,9 @@ var output = flag.String("output", "-", "path to write output")
 
 func main() {
 	flag.Parse()
+
+	terminate := make( chan os.Signal)
+	signal.Notify( terminate, syscall.SIGINT)
 
 	udpAddr,err := net.ResolveUDPAddr( "udp", *address)
 	if err != nil {
@@ -49,10 +54,12 @@ func main() {
 
 	sequence := 1
 
+	incoming := make( chan *ook.Burst, 16)
+
 	handler := func( burst *ook.Burst) bool {
 		log.Printf("got a burst")
 
-		encoded,err := ook.EncodeBurst( burst)
+		encoded,err := burst.Encode( )
 		if err != nil {
 			log.Fatalf("Failed to encode burst: %s", err.Error())
 		}
@@ -77,7 +84,18 @@ func main() {
 		return true
 	}
 
-	if err := ook.ListenTo( iface, udpAddr, handler); err != nil {
+	if err := ook.ListenTo( iface, udpAddr, incoming); err != nil {
 		log.Fatalf("Failed to listen to address: %s", err.Error())
+	}
+
+	done := false
+
+	for !done {
+		select {
+		case burst := <-incoming:
+			handler(burst)
+		case _ = <-terminate:
+			done = true
+		}
 	}
 }
