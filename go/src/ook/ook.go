@@ -81,8 +81,6 @@ func DecodeBurst( data []byte ) (*Burst,int,error) {
 		return nil,0,err
 	}
 
-	log.Printf("pos=%v count=%v", position, count)
-
 	pulses := make( []Pulse, 0, count)
 	for i := 0; i < int(count); i++ {
 		hi := uint32(0)

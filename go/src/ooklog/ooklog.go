@@ -1,16 +1,13 @@
 package main
 
 import (
-	"archive/tar"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"ook"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 var address = flag.String("address", "236.0.0.1:3636", "listen to this address")
@@ -49,37 +46,19 @@ func main() {
 		}
 	}()
 
-	tarfile := tar.NewWriter(sink)
-	defer tarfile.Close()
-
-	sequence := 1
+	writer := ook.NewTarWriter(sink)
+	defer writer.Close()
 
 	incoming := make( chan *ook.Burst, 16)
 
 	handler := func( burst *ook.Burst) bool {
-		log.Printf("got a burst")
-
-		encoded,err := burst.Encode( )
-		if err != nil {
-			log.Fatalf("Failed to encode burst: %s", err.Error())
+		if *verbose {
+			log.Printf("got a burst")
 		}
 
-		head := tar.Header{ 
-			Name: fmt.Sprintf("%04d-%#v.burst", sequence, burst.Position),
-			Mode: 0775,
-			Size: int64(len(encoded)),
-			ModTime: time.Now(),
-			Typeflag: tar.TypeReg,
-		}
-		if err := tarfile.WriteHeader(&head); err != nil {
-			log.Fatal("Failed to write tar header: %s", err.Error())
-		}
-		n,err := tarfile.Write( encoded)
+		err := writer.Write(burst)
 		if err != nil {
-			log.Fatal("Failed to write tar contents: %s", err.Error())
-		}
-		if n != len(encoded) {
-			log.Fatal("Got wrong length written to tar file")
+			log.Fatalf("Failed to write burst: %s", err.Error())
 		}
 		return true
 	}

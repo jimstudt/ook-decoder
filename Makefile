@@ -28,7 +28,7 @@ daemon : ookd
 
 clients : ookdump wh1080 
 
-go-clients : go/bin/ooklog
+go-clients : go/bin/ooklog go/bin/ookanalyze
 
 go/bin/% : $(wildcard go/src/*/*.go )
 	( cd go ; GOPATH=`pwd` go install $(@:go/bin/%=%) )
