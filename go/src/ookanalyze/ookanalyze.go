@@ -41,5 +41,6 @@ func main() {
 			log.Fatalf("Error reading burst from input: %s", err.Error())
 		}
 		if (*verbose) { log.Printf("read burst: %d pulses", len(burst.Pulses)) }
+		ook.Quantify(burst)
 	}
 }
