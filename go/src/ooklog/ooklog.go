@@ -18,10 +18,10 @@ var output = flag.String("output", "-", "path to write output")
 func main() {
 	flag.Parse()
 
-	terminate := make( chan os.Signal)
-	signal.Notify( terminate, syscall.SIGINT)
+	terminate := make(chan os.Signal)
+	signal.Notify(terminate, syscall.SIGINT)
 
-	udpAddr,err := net.ResolveUDPAddr( "udp", *address)
+	udpAddr, err := net.ResolveUDPAddr("udp", *address)
 	if err != nil {
 		log.Fatalf("Unable to resolve listenting address (%s): %s", *address, err.Error())
 	}
@@ -38,20 +38,21 @@ func main() {
 		if *output == "-" {
 			return os.Stdout
 		} else {
-			s,err := os.Create(*output)
+			s, err := os.Create(*output)
 			if err != nil {
 				log.Fatalf("Failed to create output file (%s): %s", *output, err.Error())
 			}
 			return s
 		}
+		return os.Stdout // not really reached. very sad.  go 1.1 requires this
 	}()
 
 	writer := ook.NewTarWriter(sink)
 	defer writer.Close()
 
-	incoming := make( chan *ook.Burst, 16)
+	incoming := make(chan *ook.Burst, 16)
 
-	handler := func( burst *ook.Burst) bool {
+	handler := func(burst *ook.Burst) bool {
 		if *verbose {
 			log.Printf("got a burst")
 		}
@@ -63,7 +64,7 @@ func main() {
 		return true
 	}
 
-	if err := ook.ListenTo( iface, udpAddr, incoming); err != nil {
+	if err := ook.ListenTo(iface, udpAddr, incoming); err != nil {
 		log.Fatalf("Failed to listen to address: %s", err.Error())
 	}
 
