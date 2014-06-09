@@ -1,4 +1,6 @@
 
+PREFIX = /usr/local
+
 #
 # See what our hardware machine is and our compiler (gcc or clang)
 #
@@ -47,10 +49,14 @@ wh1080 : wh1080.o ook.o
 clean :
 	rm -f *.o ookd ookdump wh1080
 
+install : ookd ookdump wh1080
+	install $^ $(PREFIX)/bin
+
 ookd.o : ook.h rtl.h
 
 ookdump.o wh1080.o : ook.h
 
-.PHONY : clean all
+.PHONY : clean all install
+
 
 include $(wildcard %.d)
