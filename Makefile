@@ -7,9 +7,9 @@ COMPILER = $(shell $(CC) 2>&1 | ( fgrep -q clang && echo clang || echo gcc ) )
 
 DEBUGFLAGS_gcc = -pg
 DEBUGFLAGS = -g -O0 $(DEBUGFLAGS_$(COMPILER))
-DEBUGFLAGS = 
+#DEBUGFLAGS = 
 
-FLOATFLAGS_clang = -ffast-math -O3
+#FLOATFLAGS_clang = -ffast-math -O3
 FLOATFLAGS_gcc = -ffast-math
 FLOATFLAGS_armv7l_gcc = -ftree-vectorize -mfpu=neon 
 FLOATFLAGS = $(FLOATFLAGS_$(MACHINE)_$(COMPILER)) $(FLOATFLAGS_$(COMPILER))
@@ -26,9 +26,9 @@ all : daemon clients go-clients
 
 daemon : ookd
 
-clients : ookdump wh1080 
+clients : ookdump wh1080 oregonsci
 
-go-clients : go/bin/ooklog go/bin/ookanalyze
+go-clients : go/bin/ooklog go/bin/ookanalyze go/bin/ookplay
 
 go/bin/% : $(wildcard go/src/*/*.go )
 	( cd go ; GOPATH=`pwd` go install $(@:go/bin/%=%) )
@@ -42,12 +42,15 @@ ookdump : ookdump.o ook.o
 wh1080 : wh1080.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
+oregonsci : oregonsci.o ook.o
+	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
 clean :
-	rm -f *.o ookd ookdump wh1080
+	rm -f *.o ookd ookdump wh1080 oregonsci
 
 ookd.o : ook.h rtl.h
 
-ookdump.o wh1080.o : ook.h
+ookdump.o wh1080.o oregonsci.o : ook.h
 
 .PHONY : clean all
 

@@ -52,4 +52,21 @@ int ook_decode_pulse_width( struct ook_burst *burst,
 			    unsigned char **dataReturn, size_t *dataLenReturn,
 			    int verbose);
 
+// This is for decoding machester encoding. Manchester coding appears as two different lengths between 
+// transitions. We call these short and long. Because the receiver may stretch or trim the radio pulses
+// we have separate bounds for the hi and low portions of the signal. 
+//
+// The returned data is one bit per byte.
+//
+// It is possible to analyze an 
+// arbitrary pulse stream to determine these bounds, but that is not part of this function. That logic 
+// is present in the golang analysis tools.
+int ook_decode_manchester( struct ook_burst *burst, 
+			    uint32_t minShortHi, uint32_t maxShortHi, 
+			    uint32_t minLongHi, uint32_t maxLongHi, 
+			    uint32_t minShortLow, uint32_t maxShortLow, 
+			    uint32_t minLongLow, uint32_t maxLongLow, 
+			    unsigned char **dataReturn, size_t *dataLenReturn,
+			    int verbose);
+
 #endif

@@ -274,3 +274,136 @@ int ook_decode_pulse_width( struct ook_burst *burst,
     return -1;
 }
 
+
+int ook_decode_manchester( struct ook_burst *burst, 
+			    uint32_t minShortHi, uint32_t maxShortHi, 
+			    uint32_t minLongHi, uint32_t maxLongHi, 
+			    uint32_t minShortLow, uint32_t maxShortLow, 
+			    uint32_t minLongLow, uint32_t maxLongLow, 
+			    unsigned char **dataReturn, size_t *dataLenReturn,
+			    int verbose)
+{
+    size_t dataLen = burst->pulses*2;  // this is an upper limit
+    unsigned char *data = (unsigned char *)malloc( dataLen);
+    if ( data == 0) goto Fail;
+
+    enum signal { shortHi=0, longHi, shortLow, longLow, endLow, indeterminate};
+    #define NUMSIG 6
+
+#if 0
+    static const char *signalName[] = {
+	[shortHi]="-",
+	[longHi]="--",
+	[shortLow]="_",
+	[longLow]="__",
+	[endLow]=".__.",
+	[indeterminate]="="
+    };
+#endif
+
+    /*
+      var machine = [4 * 8]actionNext{
+      byte(d1) + byte(LowShort):          actionNext{noAction, c0},
+      byte(d1) + byte(LowLong):           actionNext{emitZeroAction, d0},
+      byte(d1) + byte(EndOfTransmission): actionNext{endAction, c0},
+      byte(c0) + byte(HighShort):         actionNext{emitOneAction, d1},
+
+      byte(d0) + byte(HighShort):         actionNext{noAction, c1},
+      byte(d0) + byte(HighLong):          actionNext{emitOneAction, d1},
+      byte(c1) + byte(LowShort):          actionNext{emitZeroAction, d0},
+      byte(c1) + byte(EndOfTransmission): actionNext{endAction, c0},
+      }
+    */
+	
+    enum state { c0=NUMSIG*0, c1=NUMSIG*1, d0=NUMSIG*2, d1=NUMSIG*3};
+#define NUMSTATE 4
+    enum action { errorAction=0, noAction, emitZero, emitOne, endAction };
+
+    enum state currentState = c0;
+
+#if 0
+    static const char *stateName[] = {
+	[c0] = "c0",
+	[c1] = "c1",
+	[d0] = "d0",
+	[d1] = "d1",
+    };
+#endif
+
+    static const struct {
+	unsigned char action; // enum action, but I want it one byte
+	unsigned char next; // enum state, but I want it one byte
+    } state[NUMSTATE*NUMSIG] = {
+	// clang detects overlaps and out of bounds entries so this is safe
+	// uninitialzed entries are going to get a zero and be an errorAction
+	[d1 + shortLow] = { noAction, c0 },
+	[d1 + longLow] = { emitZero, d0 },
+	[d1 + endLow] = { endAction, c0 },
+	[c0 + shortHi] = { emitOne, d1 },
+
+	[d0 + shortHi] = { noAction, c1 },
+	[d0 + longHi] = { emitOne, d1 },
+	[c1 + shortLow] = { emitZero, d0 },
+	[c1 + endLow] = { endAction, c0},
+    };
+
+
+    unsigned bits = 0;
+
+    for ( int i = 0; i < burst->pulses; i++) {
+	enum signal signal[2];
+
+	// turn the high pulse into a signal symbol
+	uint32_t hi = burst->pulse[i].hiNanoseconds;
+	if ( hi >= minShortHi && hi <= maxShortHi) {
+	    signal[0] = shortHi;
+	} else if ( hi >= minLongHi && hi <= maxLongHi) {
+	    signal[0] = longHi;
+	} else {
+	    signal[0] = indeterminate;
+	}
+
+	// turn the low pulse into a signal symbol
+	uint32_t low = burst->pulse[i].lowNanoseconds;
+	if ( low >= minShortLow && low <= maxShortLow) {
+	    signal[1] = shortLow;
+	} else if ( low >= minLongLow && low <= maxLongLow) {
+	    signal[1] = longLow;
+	} else if ( i == burst->pulses - 1) {
+	    signal[1] = endLow;
+	} else {
+	    signal[1] = indeterminate;
+	}
+	
+	// run the signal symbols through the state machine
+	for ( unsigned b = 0; b <= 1; b++) {
+	    switch ( state[ currentState + signal[b] ].action) {
+	      case noAction:
+		break;
+	      case emitZero:
+		if ( bits >= dataLen) goto Fail;
+		data[bits++] = 1;
+		break;
+	      case emitOne:
+		if ( bits >= dataLen) goto Fail;
+		data[bits++] = 0;
+		break;
+	      case endAction:
+		goto Finish;
+	      case errorAction:
+		goto Fail;
+	    }
+
+	    currentState = state[ currentState + signal[b] ].next;
+	}
+    }    
+
+  Finish:
+    *dataReturn = data;  // don't bother to realloc to right length, it goes away fast
+    *dataLenReturn = dataLen;
+    return bits;
+
+  Fail:
+    if ( data) free(data);
+    return -1;
+}
