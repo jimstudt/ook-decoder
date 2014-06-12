@@ -24,6 +24,7 @@ func main() {
 			}
 			return s
 		}
+		return os.Stdin // not really reached, go 1.1 requires this. sad.
 	}()
 
 	source, err := ook.OpenFile(sourceFile)

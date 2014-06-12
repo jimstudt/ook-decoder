@@ -1,4 +1,6 @@
 
+PREFIX = /usr/local
+
 #
 # See what our hardware machine is and our compiler (gcc or clang)
 #
@@ -9,13 +11,15 @@ DEBUGFLAGS_gcc = -pg
 DEBUGFLAGS = -g -O0 $(DEBUGFLAGS_$(COMPILER))
 #DEBUGFLAGS = 
 
-#FLOATFLAGS_clang = -ffast-math -O3
+FLOATFLAGS_clang = -ffast-math -O3
 FLOATFLAGS_gcc = -ffast-math
 FLOATFLAGS_armv7l_gcc = -ftree-vectorize -mfpu=neon 
 FLOATFLAGS = $(FLOATFLAGS_$(MACHINE)_$(COMPILER)) $(FLOATFLAGS_$(COMPILER))
 
 COMPILERFLAGS_gcc = -std=c99 
 COMPILERFLAGS = $(COMPILERFLAGS_$(COMPILER))
+
+LDLIBS += -lm
 
 CPPFLAGS = -MMD
 
@@ -48,10 +52,14 @@ oregonsci : oregonsci.o ook.o
 clean :
 	rm -f *.o ookd ookdump wh1080 oregonsci
 
+install : ookd ookdump wh1080
+	install $^ $(PREFIX)/bin
+
 ookd.o : ook.h rtl.h
 
 ookdump.o wh1080.o oregonsci.o : ook.h
 
-.PHONY : clean all
+.PHONY : clean all install
+
 
 include $(wildcard %.d)
