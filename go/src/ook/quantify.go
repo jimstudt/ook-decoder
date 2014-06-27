@@ -56,6 +56,9 @@ func AssignSymbols(highs, lows ClusterDescriptions) {
 		if lows[2].Count == 1 {
 			lows[2].Sym = EndOfTransmission
 		}
+	} else if len(lows) == 2 && lows[1].Count == 1 {
+		lows[0].Sym = LowShort
+		lows[1].Sym = EndOfTransmission
 	}
 }
 
@@ -178,7 +181,7 @@ func Quantify(burst *Burst) {
 
 		v = v + ch.Sym.String() + cl.Sym.String()
 	}
-	log.Printf(":: %s", v)
+	log.Printf(":: %d pulses %s", len(burst.Pulses), v)
 
 	decoded, err := DecodeManchester(syms)
 	if err != nil {

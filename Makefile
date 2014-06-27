@@ -30,7 +30,7 @@ all : daemon clients go-clients
 
 daemon : ookd
 
-clients : ookdump wh1080 oregonsci
+clients : ookdump wh1080 oregonsci ws2300
 
 go-clients : go/bin/ooklog go/bin/ookanalyze go/bin/ookplay
 
@@ -46,18 +46,21 @@ ookdump : ookdump.o ook.o
 wh1080 : wh1080.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
+ws2300 : ws2300.o ook.o
+	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
 oregonsci : oregonsci.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 clean :
-	rm -f *.o ookd ookdump wh1080 oregonsci
+	rm -f *.o ookd ookdump wh1080 ws2300 oregonsci
 
-install : ookd ookdump wh1080
+install : ookd ookdump wh1080 ws2300
 	install $^ $(PREFIX)/bin
 
 ookd.o : ook.h rtl.h
 
-ookdump.o wh1080.o oregonsci.o : ook.h
+ookdump.o wh1080.o oregonsci.o ws2300.o : ook.h
 
 .PHONY : clean all install
 
