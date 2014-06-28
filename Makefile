@@ -21,10 +21,15 @@ COMPILERFLAGS = $(COMPILERFLAGS_$(COMPILER))
 
 LDLIBS += -lm
 
-CPPFLAGS = -MMD
+CPPFLAGS = -MMD 
 
 CFLAGS = $(COMPILERFLAGS) -Wall -Werror -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE=1 -D_DARWIN_C_SOURCE=1 $(DEBUGFLAGS) $(FLOATFLAGS)
 DAEMON_LDLIBS = -lrtlsdr
+
+ifeq ("$(shell uname)", "Darwin")
+LINK.c += -L /usr/local/lib
+CPPFLAGS += -I /usr/local/include
+endif
 
 all : daemon clients go-clients
 
