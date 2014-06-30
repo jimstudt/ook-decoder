@@ -346,13 +346,17 @@ int main( int argc, char **argv)
 			  double wind = (((data[3]&0x1f)<<4) + ((data[4]&0xf0)>>4) ) / 10.0;
 			  int windDir = (data[4] & 0x0f);
 			  if ( data[1] & 0x80) {
-			      addSample( &averageWindSpeed, wind);
-			      addSample( &windDirection, windDir);
-			      currentWindSpeed = wind;
-			      currentWindDirection = windDir;
+			      if ( wind != 51.0) {
+				  addSample( &gustWindSpeed, wind);
+				  currentGustSpeed = wind;
+			      }
 			  } else {
-			      addSample( &gustWindSpeed, wind);
-			      currentGustSpeed = wind;
+			      if ( wind != 51.0) {
+				  addSample( &averageWindSpeed, wind);
+				  addSample( &windDirection, windDir);
+				  currentWindSpeed = wind;
+				  currentWindDirection = windDir;
+			      }
 			  }
 		      }
 		    break;
