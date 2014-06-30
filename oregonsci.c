@@ -218,7 +218,7 @@ int main( int argc, char **argv)
 	    { 0,0,0,0}
 	};
 
-	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:", options, &optionIndex );
+	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:r:P:", options, &optionIndex );
 	if ( c == -1) break;
 
 	switch(c) {
