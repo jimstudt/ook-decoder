@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <math.h>
 
 #include "ook.h"
 
@@ -34,6 +35,12 @@ static struct datum gustWindSpeed;
 static struct datum rainfall;
 static struct datum batteryLow;
 static struct datum windDirection;
+
+static double currentTemperature = NAN;
+static double currentHumidity = NAN;
+static double currentWindSpeed = NAN;
+static double currentGustSpeed = NAN;
+static double currentWindDirection = NAN;
 
 static void resetDatum(struct datum *d)
 {
@@ -77,11 +84,7 @@ static void dumpWeather( void)
     dumpDatum( &windDirection, "dir", "NEWS");
 }
 
-static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, double rain,
-			  int batteryLowBits, int windDirectionBits) __attribute__(( unused));
-
-static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, double rain,
-			  int batteryLowBits, int windDirectionBits) 
+static void reportRecent( const char *file)
 {
     char name[256];
     strcpy(name,"/tmp/ws2300.XXXXXX");
@@ -101,13 +104,13 @@ static void recordRecent( const char *file, double temp, double hum, double avgW
 
     FILE *f = fdopen(fd,"w");
     fprintf(f,"{\n");
-    fprintf(f,"\t\"temperature\":%.1f,\n", temp);
-    fprintf(f,"\t\"humidity\":%.1f,\n", hum);
-    fprintf(f,"\t\"avgWindSpeed\":%.1f,\n", avgWind);
-    fprintf(f,"\t\"gustSpeed\":%.1f,\n", gustWind);
-    fprintf(f,"\t\"rain\":%.1f,\n", rain);
-    fprintf(f,"\t\"batteryLow\":%d,\n", batteryLowBits);
-    fprintf(f,"\t\"windDirection\":%d\n", windDirectionBits*45);
+    
+    if ( !isnan(currentTemperature)) fprintf(f,"\t\"temperature\":%.1f,\n", currentTemperature);
+    if ( !isnan(currentHumidity)) fprintf(f,"\t\"humidity\":%.1f,\n", currentHumidity);
+    if ( !isnan(currentWindSpeed)) fprintf(f,"\t\"avgWindSpeed\":%.1f,\n", currentWindSpeed);
+    if ( !isnan(currentGustSpeed)) fprintf(f,"\t\"gustSpeed\":%.1f,\n", currentGustSpeed);
+    if ( !isnan(currentWindDirection)) fprintf(f,"\t\"windDirection\":%d,\n", (int)(currentWindDirection*45));
+    fprintf(f,"\t\"timestamp\":%ld\n", time(0));
     fprintf(f,"}\n");
     fclose(f);
 
@@ -322,12 +325,14 @@ int main( int argc, char **argv)
 		      {
 			  double temp = (data[3]&0x0f)*10 + ((data[4]&0xf0)>>4) + (data[4]&0x0f)*0.1 - 30.0;  // TX13 is -40
 			  addSample( &temperature, temp);
+			  currentTemperature = temp;
 		      }
 		    break;
 		  case 1:               // humidity
 		      {
 			  int hum = (data[3]&0x0f)*10 + ((data[4]&0xf0)>>4);
 			  addSample( &humidity, hum);
+			  currentHumidity = hum;
 		      }
 		    break;
 		  case 2:               // rainfall
@@ -343,8 +348,11 @@ int main( int argc, char **argv)
 			  if ( data[1] & 0x80) {
 			      addSample( &averageWindSpeed, wind);
 			      addSample( &windDirection, windDir);
+			      currentWindSpeed = wind;
+			      currentWindDirection = windDir;
 			  } else {
 			      addSample( &gustWindSpeed, wind);
+			      currentGustSpeed = wind;
 			  }
 		      }
 		    break;
@@ -352,8 +360,7 @@ int main( int argc, char **argv)
 
 		if ( verbose) dumpWeather();
 
-		//recordRecent( recentFileName, temp, hum, avgWind, gustWind, rain, batteryLowBits, windDirectionBits);
-
+		reportRecent(recentFileName);
 	    } else {
 		if ( verbose) fprintf(stderr,"ignored %d pulse burst\n", burst->pulses);
 	    }
