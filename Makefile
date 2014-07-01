@@ -60,7 +60,7 @@ oregonsci : oregonsci.o ook.o
 clean :
 	rm -f *.o ookd ookdump wh1080 ws2300 oregonsci
 
-install : ookd ookdump wh1080 ws2300
+install : ookd ookdump wh1080 ws2300 oregonsci
 	install $^ $(PREFIX)/bin
 
 ookd.o : ook.h rtl.h
