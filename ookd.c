@@ -26,16 +26,19 @@ static int multicastSocket = -1;
 static struct sockaddr *multicastSockaddr = 0;
 static size_t multicastSockaddrLen = 0;
 
+static int minPacket = 16;
+
 static void showHelp( FILE *f)
 {
     fprintf(f, 
-	    "Usage: ookd [-h] [-?] [-v] [-f frequency] [-a mcastaddr] [-p mcastport] [-i mcastinterface]\n"
+	    "Usage: ookd [-h] [-?] [-v] [-f frequency] [-a mcastaddr] [-p mcastport] [-i mcastinterface] [-m minpacket]\n"
 	    "  -h | -? | --help                      display usage and exit\n"
 	    "  -v | --verbose                        verbose logging\n"
 	    "  -f nnnn | --frequency nnn             set center frequency, default 433910000\n"
 	    "  -a addr | --multicast-address addr    multicast address, default 236.0.0.1\n"
 	    "  -p port | --multicast-port port       multicast port, default 3636\n"
 	    "  -i addr | --multicast-interface addr  address of the multicast interface, default 127.0.0.1\n"
+	    "  -m nnnn | --min-packet nnnn           minimum number of pulses for a packet, default 10\n"
 	    );
 }
 
@@ -75,18 +78,22 @@ static void recordPulse( unsigned n, unsigned rise, unsigned drop, unsigned end,
 
     if ( terminal) {
 	if ( burst) {
-	    void *data=0;
-	    size_t len;
-	    if ( ook_encode( burst, &data, &len) != 0 || data == 0) {
-		fprintf(stderr, "Failed to encode a pulse burst.\n");
-	    } else {
-		int e = sendto( multicastSocket, data, len, 0, multicastSockaddr, multicastSockaddrLen);
-		if ( e < 0) {
-		    fprintf(stderr, "Failed to multicast pulse (%zu bytes): %s\n", len, strerror(errno));
+	    if ( burst->pulses > minPacket) {
+		void *data=0;
+		size_t len;
+		if ( ook_encode( burst, &data, &len) != 0 || data == 0) {
+		    fprintf(stderr, "Failed to encode a pulse burst.\n");
+		} else {
+		    int e = sendto( multicastSocket, data, len, 0, multicastSockaddr, multicastSockaddrLen);
+		    if ( e < 0) {
+			fprintf(stderr, "Failed to multicast pulse (%zu bytes): %s\n", len, strerror(errno));
+		    }
+		    if ( verbose) fprintf(stderr,"Multicast %u pulse, %zu bytes\n", burst->pulses, len);
+		    
+		    free(data);
 		}
-		if ( verbose) fprintf(stderr,"Multicast %u pulse, %zu bytes\n", burst->pulses, len);
-
-		free(data);
+	    } else {
+		if ( verbose) fprintf(stderr,"Skipped run burst of %d pulses\n", burst->pulses);
 	    }
 
 	    free(burst);
@@ -363,10 +370,11 @@ int main( int argc, char **argv)
 	    { "multicast-address", required_argument, 0, 'a'},
 	    { "multicast-port", required_argument, 0, 'p' },
 	    { "multicast-interface", required_argument, 0, 'i' },
+	    { "min-packet", required_argument, 0, 'm' },
 	    { 0,0,0,0}
 	};
 
-	int c = getopt_long( argc, argv, "vh?f:a:p:i:", options, &optionIndex );
+	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:", options, &optionIndex );
 	if ( c == -1) break;
 
 	switch(c) {
@@ -387,6 +395,9 @@ int main( int argc, char **argv)
 		  }
 		  centerFrequency = f;
 	      }
+	    break;
+	  case 'm':
+	    minPacket = atoi(optarg);
 	    break;
 	  case 'a':
 	    multicastAddress = optarg;
