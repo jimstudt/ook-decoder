@@ -106,7 +106,10 @@ static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, 
     };
 
     const int showAll = 0;
-    float s = 0;
+    static float lowPassPowerSquared = 0;
+
+    static double totalPowerSquared = 0;
+    static int powerSamples = 0;
 
     /*
     ** All of this static data is so we keep our state across
@@ -119,8 +122,8 @@ static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, 
     static unsigned cwMotion = 0;
     static unsigned ccwMotion = 0;
 
-    const float riseThreshold = 0.75;
-    const float dropThreshold = 0.25;
+    const float riseThreshold = 0.25;
+    const float dropThreshold = 0.1;
     const unsigned lowLengthLimit = 2000;
 
     static int riseSample = 0;
@@ -131,6 +134,15 @@ static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, 
 	float I = (data[i]-128)/128.0;
 	float Q = (data[i+1]-128)/128.0;
 	float powerSquared = I*I+Q*Q;
+
+	totalPowerSquared += powerSquared;
+	powerSamples++;
+
+	if ( verbose && powerSamples >= 100000) {
+	    fprintf(stderr,"average power is %5.2f\n", sqrt(totalPowerSquared/powerSamples));
+	    powerSamples = 0;
+	    totalPowerSquared = 0;
+	}
 
 	unsigned newQuadrant =0;
 
@@ -163,9 +175,7 @@ static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, 
 	}
 	quadrant = newQuadrant;
 
-	s = alpha*powerSquared + (1.0-alpha)*s;
-	
-	float lowPassPowerSquared = s;
+	lowPassPowerSquared = alpha*powerSquared + (1.0-alpha)*lowPassPowerSquared;
 
 	if ( state==HIGH && lowPassPowerSquared < dropThreshold) {
 	    dropSample = i/2;
