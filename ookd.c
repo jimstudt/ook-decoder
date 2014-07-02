@@ -129,8 +129,8 @@ static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, 
     static unsigned cwMotion = 0;
     static unsigned ccwMotion = 0;
 
-    const float riseThreshold = 0.25;
-    const float dropThreshold = 0.1;
+    const float riseThreshold = 0.250;
+    const float dropThreshold = 0.100;
     const unsigned lowLengthLimit = 2000;
 
     static int riseSample = 0;
