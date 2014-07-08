@@ -67,12 +67,13 @@ static void dumpWeather( void)
     dumpDatum( &humidity, "humidity", "%");
     dumpDatum( &averageWindSpeed, "wind", "m/s");
     dumpDatum( &gustWindSpeed, "gust", "m/s");
-    dumpDatum( &rainfall, "rain", "mm");
+    dumpDatum( &rainfall, "rainfall", "m");
     dumpDatum( &batteryLow, "batt", "??");
     dumpDatum( &windDirection, "dir", "NEWS");
 }
 
-static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, double rain,
+static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, 
+			  double rain,
 			  int batteryLowBits, int windDirectionBits)
 {
     char name[256];
@@ -97,7 +98,7 @@ static void recordRecent( const char *file, double temp, double hum, double avgW
     fprintf(f,"\t\"humidity\":%.1f,\n", hum);
     fprintf(f,"\t\"avgWindSpeed\":%.1f,\n", avgWind);
     fprintf(f,"\t\"gustSpeed\":%.1f,\n", gustWind);
-    fprintf(f,"\t\"rain\":%.1f,\n", rain);
+    fprintf(f,"\t\"rainfall\":%.4f,\n", rain);
     fprintf(f,"\t\"batteryLow\":%d,\n", batteryLowBits);
     fprintf(f,"\t\"windDirection\":%d\n", windDirectionBits*45);
     fprintf(f,"}\n");
@@ -202,6 +203,8 @@ int main( int argc, char **argv)
     double recentRain = -1;
     int recentBattery = 0;
     int recentDirection = -1;
+
+    int lastRainCounter = -1;
 
     // Handle options
     for(;;) {
@@ -373,13 +376,19 @@ int main( int argc, char **argv)
 			      break;
 			  }
 			  if ( okChecksum( nibble, 25)) {
-			      int rainHundrethsPerHour = nibble[18]*1000+nibble[17]*100+nibble[16]*10+nibble[15];
-			      int rainCounter = nibble[24]*100000 + nibble[23]*10000 + nibble[22]*1000 +
-				  nibble[21]*100 + nibble[20]*10 + nibble[19];
-			      if ( verbose) fprintf(stderr,"Rain=%4.1fin/hr Tot=%6d thousandths\n", rainHundrethsPerHour/10.0, rainCounter);
-			      addSample(&rainfall, rainHundrethsPerHour/100.0); // units are probably wrong
-
-			      recentRain = rainHundrethsPerHour/100.0;
+			      const int inchesPerMeter = 1000.0/25.4;
+			      int rainHundrethsPerHour = nibble[18]*1000+nibble[17]*100+nibble[16]*10+nibble[15]; // inch/100
+			      int rainCount = nibble[24]*100000 + nibble[23]*10000 + nibble[22]*1000 +
+				  nibble[21]*100 + nibble[20]*10 + nibble[19];                                    // inch/1000
+			      if ( verbose) fprintf(stderr,"Rain=%4.1fin/hr Tot=%6d thousandths\n", rainHundrethsPerHour/100.0, rainCount);
+			      if ( lastRainCounter < 0 || lastRainCounter > rainCount ) {  // if first or wrapped, just set for later
+				  lastRainCounter = rainCount;
+			      } else {
+				  int r = (rainCount - lastRainCounter) * inchesPerMeter;
+				  lastRainCounter = rainCount;
+				  recentRain = r;
+				  addSample(&rainfall, r);
+			      }
 			  } else {
 			      fprintf(stderr,"Bad checksum on sensor %04x\n", sensorId);
 			  }
