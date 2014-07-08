@@ -111,7 +111,8 @@ static void recordRecent( const char *file, double temp, double hum, double avgW
 
 static void recordDatum( FILE *f, struct datum *d, const char *name, int comma)
 {
-    fprintf(f, "\t\"%s\" : { \"n\":%d, \"sum\":%.1f, \"sum2\":%.1f, \"min\":%.1f, \"max\":%.1f }%s\n",
+    
+    fprintf(f, "\t\"%s\" : { \"n\":%d, \"sum\":%.3g, \"sum2\":%.4g, \"min\":%.3g, \"max\":%.3g }%s\n",
 	    name, d->n, d->sum, d->sumOfSquares, d->minimum, d->maximum, (comma ? ",":""));
     resetDatum( d);
 }
