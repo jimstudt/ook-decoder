@@ -100,7 +100,7 @@ static void recordRecent( const char *file, double temp, double hum, double avgW
     fprintf(f,"\t\"gustSpeed\":%.1f,\n", gustWind);
     fprintf(f,"\t\"rainfall\":%.4f,\n", rain);
     fprintf(f,"\t\"batteryLow\":%d,\n", batteryLowBits);
-    fprintf(f,"\t\"windDirection\":%d\n", windDirectionBits*45);
+    fprintf(f,"\t\"windDirection\":%d\n", (int)(windDirectionBits*22.5));
     fprintf(f,"}\n");
     fclose(f);
 
@@ -405,19 +405,21 @@ int main( int argc, char **argv)
 			  }
 			  if ( okChecksum( nibble, 24)) {
 			      int direction = nibble[15];
+			      int directionDegrees = (int)(direction*22.5);
+
 			      // 16 and 17 are unknown
 			      int currentSpeed = nibble[20]*100 + nibble[19]*10 + nibble[18];
 			      int averageSpeed = nibble[23]*100 + nibble[22]*10 + nibble[21];
 
-			      if ( verbose) fprintf(stderr,"Wind=%4.1fm/s avg=%4.1fm/s dir=%ds\n", currentSpeed/10.0, averageSpeed/10.0, direction);
+			      if ( verbose) fprintf(stderr,"Wind=%4.1fm/s avg=%4.1fm/s dir=%ds\n", currentSpeed/10.0, averageSpeed/10.0, directionDegrees);
 
 			      addSample( &averageWindSpeed, averageSpeed/10.0);
 			      addSample( &gustWindSpeed, currentSpeed/10.0);
-			      addSample( &windDirection, direction);
+			      addSample( &windDirection, directionDegrees);
 
 			      recentWind = averageSpeed/10.0;
 			      recentGust = currentSpeed/10.0;
-			      recentDirection = direction;
+			      recentDirection = directionDegrees;
 			  } else {
 			      fprintf(stderr,"Bad checksum on sensor %04x\n", sensorId);
 			  }
