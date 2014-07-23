@@ -109,7 +109,7 @@ static void reportRecent( const char *file)
     if ( !isnan(currentHumidity)) fprintf(f,"\t\"humidity\":%.1f,\n", currentHumidity);
     if ( !isnan(currentWindSpeed)) fprintf(f,"\t\"avgWindSpeed\":%.1f,\n", currentWindSpeed);
     if ( !isnan(currentGustSpeed)) fprintf(f,"\t\"gustSpeed\":%.1f,\n", currentGustSpeed);
-    if ( !isnan(currentWindDirection)) fprintf(f,"\t\"windDirection\":%d,\n", (int)(currentWindDirection));
+    if ( !isnan(currentWindDirection)) fprintf(f,"\t\"windDirection\":%d,\n", (int)(currentWindDirection*45));
     fprintf(f,"\t\"timestamp\":%ld\n", time(0));
     fprintf(f,"}\n");
     fclose(f);
@@ -353,9 +353,9 @@ int main( int argc, char **argv)
 			  } else {
 			      if ( wind != 51.0) {
 				  addSample( &averageWindSpeed, wind);
-				  addSample( &windDirection, windDir*22.5);
+				  addSample( &windDirection, windDir);
 				  currentWindSpeed = wind;
-				  currentWindDirection = windDir*22.5;
+				  currentWindDirection = windDir;
 			      }
 			  }
 		      }
