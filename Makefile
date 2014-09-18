@@ -54,7 +54,7 @@ wh1080 : wh1080.o ook.o
 ws2300 : ws2300.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-oregonsci : oregonsci.o ook.o
+oregonsci : oregonsci.o ook.o datum.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 clean :
@@ -65,7 +65,7 @@ install : ookd ookdump wh1080 ws2300 oregonsci
 
 ookd.o : ook.h rtl.h
 
-ookdump.o wh1080.o oregonsci.o ws2300.o : ook.h
+ookdump.o wh1080.o oregonsci.o ws2300.o : ook.h datum.h
 
 .PHONY : clean all install
 

@@ -6,20 +6,13 @@
 #include <unistd.h>
 #include <limits.h>
 #include <time.h>
+#include <math.h>
 #include <sys/stat.h>
 
 #include "ook.h"
+#include "datum.h"
 
 int verbose=0;
-
-// Datum keeps enough information to sum them up and still compute the standard deviation
-struct datum {
-    unsigned n;
-    double sum;
-    double sumOfSquares;
-    double maximum;
-    double minimum;
-};
 
 static time_t oldestDatum = 0;
 static struct datum temperature;
@@ -29,37 +22,7 @@ static struct datum gustWindSpeed;
 static struct datum rainfall;
 static struct datum batteryLow;
 static struct datum windDirection;
-
-static void resetDatum(struct datum *d)
-{
-    memset(d,0,sizeof(*d));
-}
-
-static void addSample( struct datum *d, double v)
-{
-    if ( oldestDatum == 0) oldestDatum = time(0);
-
-    if ( d->n==0) {
-	d->minimum = v;
-	d->maximum = v;
-    } else {
-	if ( v > d->maximum) d->maximum = v;
-	if ( v < d->minimum) d->minimum = v;
-    }
-    d->n++;
-    d->sum += v;
-    d->sumOfSquares += v*v;
-}
-
-static void dumpDatum( struct datum *d, const char *name, const char *units)
-{
-    if ( d->n == 0) {
-	fprintf(stderr,"%s no data\n", name);
-    } else {
-	fprintf(stderr, "%s %u samples, %5.1f %s   min %5.1f  max %5.1f\n",
-		name, d->n, d->sum/d->n, units, d->minimum, d->maximum);
-    }
-}
+static struct cdatum windVector;
 
 static void dumpWeather( void)
 {
@@ -70,6 +33,7 @@ static void dumpWeather( void)
     dumpDatum( &rainfall, "rainfall", "m");
     dumpDatum( &batteryLow, "batt", "??");
     dumpDatum( &windDirection, "dir", "NEWS");
+    dumpCDatum( &windVector, "wind", "m/s");
 }
 
 static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, 
@@ -118,6 +82,20 @@ static void recordDatum( FILE *f, struct datum *d, const char *name, int comma)
 }
 
 
+static void recordCDatum( FILE *f, struct cdatum *d, const char *name, int comma)
+{
+    
+    fprintf(f, "\t\"%s\" : { \"n\":%d, \"sum\":[%.3g,%3.g], \"sum2\":[%.4g,%.4g], \"min\":[%.3g,%.3g], \"max\":[%.3g,%.3g] }%s\n",
+	    name, d->n, 
+	    creal(d->sum), cimag(d->sum),
+	    creal(d->sumOfSquares), cimag(d->sumOfSquares),
+	    creal(d->minimum), cimag(d->minimum),
+	    creal(d->maximum), cimag(d->maximum),
+	    (comma ? ",":""));
+    resetCDatum( d);
+}
+
+
 static void recordPeriodic( const char *file)
 {
     char name[256];
@@ -147,6 +125,7 @@ static void recordPeriodic( const char *file)
     recordDatum( f, &rainfall, "rainfall", 1);
     recordDatum( f, &batteryLow, "batteryLow", 1);
     recordDatum( f, &windDirection, "windDirection", 0);
+    recordCDatum( f, &windVector, "windVector", 0);
     fprintf(f,"}\n");
     fclose(f);
 
@@ -227,7 +206,7 @@ int main( int argc, char **argv)
 
 	switch(c) {
 	  case 'h':
-	  case '?':
+case '?':
 	    showHelp(stdout);
 	    return 0;
 	  case 'v':
@@ -416,10 +395,13 @@ int main( int argc, char **argv)
 			      addSample( &averageWindSpeed, averageSpeed/10.0);
 			      addSample( &gustWindSpeed, currentSpeed/10.0);
 			      addSample( &windDirection, directionDegrees);
+			      addCSampleMA( &windVector, averageSpeed/10.0, directionDegrees/360.0*M_2_PI);
 
 			      recentWind = averageSpeed/10.0;
 			      recentGust = currentSpeed/10.0;
 			      recentDirection = directionDegrees;
+
+			      if (oldestDatum == 0) oldestDatum = time(0);
 			  } else {
 			      fprintf(stderr,"Bad checksum on sensor %04x\n", sensorId);
 			  }
