@@ -57,10 +57,13 @@ ws2300 : ws2300.o ook.o
 oregonsci : oregonsci.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-clean :
-	rm -f *.o ookd ookdump wh1080 ws2300 oregonsci
+nexa : nexa.o ook.o
+	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-install : ookd ookdump wh1080 ws2300 oregonsci
+clean :
+	rm -f *.o ookd ookdump wh1080 ws2300 oregonsci nexa
+
+install : ookd ookdump wh1080 ws2300 oregonsci nexa
 	install $^ $(PREFIX)/bin
 
 ookd.o : ook.h rtl.h
