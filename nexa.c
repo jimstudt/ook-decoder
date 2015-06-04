@@ -20,6 +20,8 @@
 #define PHYSICAL_0_BIT_LEN 6
 #define TRANSMITTER_CODE_LEN 26
 
+#define UPPER_LIMIT_OF_PHYSICAL_BITS 4096
+
 #define PULSE_LENGTH_NANOSEC 250000
 
 #define STATSD_HOST "127.0.0.1"
@@ -280,7 +282,7 @@ int main( int argc, char **argv)
         exit(1);
     }
     
-    unsigned char *data = (unsigned char *)malloc(4096); // predefined upper limit of physical bits
+    unsigned char *data = (unsigned char *)malloc(UPPER_LIMIT_OF_PHYSICAL_BITS * sizeof(unsigned char));
     
     for (;;) {
         struct ook_burst *burst;
@@ -298,7 +300,7 @@ int main( int argc, char **argv)
         }
         
         size_t bits = 0;
-        memset(data, 0, sizeof(data));
+        memset(data, 0, UPPER_LIMIT_OF_PHYSICAL_BITS * sizeof(unsigned char));
         
         for ( int i = 0; i < burst->pulses; i++) {
             data[bits++] = 1;

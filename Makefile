@@ -35,7 +35,7 @@ all : daemon clients go-clients
 
 daemon : ookd
 
-clients : ookdump wh1080 oregonsci ws2300
+clients : ookdump wh1080 oregonsci ws2300 nexa
 
 go-clients : go/bin/ooklog go/bin/ookanalyze go/bin/ookplay
 
