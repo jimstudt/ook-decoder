@@ -74,6 +74,8 @@ a burst or two of 88 pulses every 45 seconds, you are probably a wh1080. This sa
 
 **???** Add the LaCrosse reader here.
 
+**nexa** decodes ON/OFF signals for Nexa wireless units (http://www.nexa.se) of the smart home. This outputs the transmitter code to stdout and can also send statistics to StatsD server.
+
 The rtl-sdr library and the ook library itself are linked statically to 
 avoid build complexity.
 
