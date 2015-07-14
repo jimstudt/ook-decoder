@@ -340,6 +340,7 @@ case '?':
 			      if ( verbose) fprintf(stderr,"Temp=%4.1fC Hum=%02d%% %d\n", tempTenthsC/10.0, relativeHum, nibbles);
 			      addSample( &temperature, tempTenthsC/10.0);
 			      addSample( &humidity, relativeHum);
+			      if (oldestDatum == 0) oldestDatum = time(0);
 
 			      recentTemp = tempTenthsC/10.0;
 			      recentHum = relativeHum;
@@ -368,6 +369,7 @@ case '?':
 				  lastRainCounter = rainCount;
 				  recentRain = r;
 				  addSample(&rainfall, r);
+				  if (oldestDatum == 0) oldestDatum = time(0);
 			      }
 			  } else {
 			      fprintf(stderr,"Bad checksum on sensor %04x\n", sensorId);
