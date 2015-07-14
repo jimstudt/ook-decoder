@@ -31,11 +31,14 @@ LINK.c += -L /usr/local/lib
 CPPFLAGS += -I /usr/local/include
 endif
 
-all : daemon clients go-clients
+MANPAGES = man/ookd.1 man/ookdump.1 man/oregonsci.1
+CLIENTS = ookdump wh1080 oregonsci ws2300 nexa
+
+all : daemon clients go-clients man-pages
 
 daemon : ookd
 
-clients : ookdump wh1080 oregonsci ws2300 nexa
+clients : $(CLIENTS)
 
 go-clients : go/bin/ooklog go/bin/ookanalyze go/bin/ookplay
 
@@ -60,10 +63,15 @@ oregonsci : oregonsci.o ook.o datum.o
 nexa : nexa.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
-clean :
-	rm -f *.o ookd ookdump wh1080 ws2300 oregonsci nexa
+man-pages : $(MANPAGES)
 
-install : ookd ookdump wh1080 ws2300 oregonsci nexa
+man/%.1 : man/%.1.md 
+	pandoc -s -t man -o $@ $<
+
+clean :
+	rm -f *.o ookd $(CLIENTS) $(MANPAGES)
+
+install : ookd $(CLIENTS)
 	install $^ $(PREFIX)/bin
 
 ookd.o : ook.h rtl.h
