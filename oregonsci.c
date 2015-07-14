@@ -124,7 +124,7 @@ static void recordPeriodic( const char *file)
     recordDatum( f, &gustWindSpeed, "gustSpeed", 1);
     recordDatum( f, &rainfall, "rainfall", 1);
     recordDatum( f, &batteryLow, "batteryLow", 1);
-    recordDatum( f, &windDirection, "windDirection", 0);
+    recordDatum( f, &windDirection, "windDirection", 1);
     recordCDatum( f, &windVector, "windVector", 0);
     fprintf(f,"}\n");
     fclose(f);
