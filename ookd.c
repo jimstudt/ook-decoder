@@ -28,6 +28,8 @@ static size_t multicastSockaddrLen = 0;
 
 static int minPacket = 16;
 
+static const char *inputFileName = 0;
+
 static void showHelp( FILE *f)
 {
     fprintf(f, 
@@ -39,6 +41,7 @@ static void showHelp( FILE *f)
 	    "  -p port | --multicast-port port       multicast port, default 3636\n"
 	    "  -i addr | --multicast-interface addr  address of the multicast interface, default 127.0.0.1\n"
 	    "  -m nnnn | --min-packet nnnn           minimum number of pulses for a packet, default 10\n"
+	    "  -r filename | --read-file filename    read from input file instead of radio, for testing\n"
 	    );
 }
 
@@ -371,10 +374,11 @@ int main( int argc, char **argv)
 	    { "multicast-port", required_argument, 0, 'p' },
 	    { "multicast-interface", required_argument, 0, 'i' },
 	    { "min-packet", required_argument, 0, 'm' },
+	    { "read-file", required_argument, 0, 'r' },
 	    { 0,0,0,0}
 	};
 
-	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:", options, &optionIndex );
+	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:r:", options, &optionIndex );
 	if ( c == -1) break;
 
 	switch(c) {
@@ -408,6 +412,9 @@ int main( int argc, char **argv)
 	  case 'p':
 	    multicastPort = optarg;
 	    break;
+	  case 'r':
+	    inputFileName = optarg;
+	    break;
 	  default:
 	    fprintf(stderr,"Illegal option\n");
 	    showHelp(stderr);
@@ -419,7 +426,7 @@ int main( int argc, char **argv)
 
     signal(SIGINT, exitNicely);
 
-    {
+    if ( inputFileName == 0) {
 	struct rtldev *rtl = rtlOpen(NULL,0);
 	if ( !rtl) {
 	    fprintf(stderr,"Failed to open RTL SDR device\n");
@@ -438,19 +445,38 @@ int main( int argc, char **argv)
 	rtlToStop = 0;
 
 	rtlClose(rtl);
+    } else {
+	FILE *in = fopen( inputFileName, "r");
+	if ( !in) {
+	    fprintf(stderr, "Failed to open input file '%s': %s\n", inputFileName, strerror(errno));
+	    exit(1);
+	}
 
-	//
-	// the rest of this is just in case someone is running a leak detector on us.
-	//
-	if ( multicastSocket != -1) {
-	    close(multicastSocket);
-	    multicastSocket = -1;
+	for(;;) {
+	    unsigned char buf[16384];
+	    size_t got = fread( buf, 1, sizeof(buf), in);
+	    if ( got == 0 && feof(in)) break;
+	    if ( got == 0) {
+		fprintf(stderr, "Error while reading input file: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    debugHandler( buf, got, 0, 0);
 	}
-	if ( multicastSockaddr) {
-	    free(multicastSockaddr);
-	    multicastSockaddr = 0;
-	    multicastSockaddrLen = 0;
-	}
+
+	fclose(in);
+    }
+
+    //
+    // the rest of this is just in case someone is running a leak detector on us.
+    //
+    if ( multicastSocket != -1) {
+	close(multicastSocket);
+	multicastSocket = -1;
+    }
+    if ( multicastSockaddr) {
+	free(multicastSockaddr);
+	multicastSockaddr = 0;
+	multicastSockaddrLen = 0;
     }
 
     return 0;

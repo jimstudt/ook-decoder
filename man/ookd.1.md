@@ -50,6 +50,10 @@ thermometer, or alarm device.
     you wish to send them out of the computer you will need to use one of your
     external IP addresses.
 
+-r *FILENAME*, \--read-file *FILENAME*
+:   The name of a file to read the IQ raw data instead of from a radio.
+    This is useful for testing and tuning.
+
 -v, \--verbose
 :   Print verbose information while working.
 
