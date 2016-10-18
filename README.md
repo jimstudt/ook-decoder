@@ -104,6 +104,14 @@ On an original BeagleBone at 250ksps ookd will consume about 30% of the CPU. Thi
 
 In general, ookd matters for performance, but the clients don't. The data reduction between the two is just too large for the clients to matter.
 
+### Testing ###
+
+You can record a raw IQ data stream using something like...
+
+    rtl_sdr -f 433900000 -s 250000 -n 25000000 /tmp/my-filename.iq
+
+... and then play that back into `ookd` at high speed using the `-r` flag.
+
 ### Building on Mac OS X ###
 
 You will need the rtl-sdr library to build. You can install this with:
