@@ -105,7 +105,7 @@ static void recordPulse( unsigned n, unsigned rise, unsigned drop, unsigned end,
     }
 }
 
-static void debugPulses( const unsigned char *data, uint32_t len, uint8_t bins, const float alpha)
+static void findPulses( const unsigned char *data, uint32_t len, const float alpha)
 {
     enum motionType { NONE, CRAZY, CW, CCW };
     static const unsigned char motion[16] = {   // indexed by 4*oldquadrant+newquadrant
@@ -248,10 +248,10 @@ static void debugHistogram( const unsigned char *data, uint32_t len, uint8_t bin
 }
 #endif
 
-static void debugHandler(const unsigned char *data, uint32_t len, void *ctx, struct rtldev *rtl)
+static void iqHandler(const unsigned char *data, uint32_t len, void *ctx, struct rtldev *rtl)
 {
     //debugHistogram( data, len, 16, 0.2);
-    debugPulses( data, len, 16, 0.2);
+    findPulses( data, len, 0.2);
     sampleCounter += len/2;
 }
 
@@ -439,8 +439,8 @@ int main( int argc, char **argv)
 
 	// something must call rtlStop(rtl) to kill this, to this end we stash in a global, ick
 	rtlToStop = rtl;
-	if ( rtlRun( rtl, debugHandler, 0)) {
-	    fprintf(stderr, "Failed to run debugHandler\n");
+	if ( rtlRun( rtl, iqHandler, 0)) {
+	    fprintf(stderr, "Failed to run iqHandler\n");
 	}
 	rtlToStop = 0;
 
@@ -460,7 +460,7 @@ int main( int argc, char **argv)
 		fprintf(stderr, "Error while reading input file: %s\n", strerror(errno));
 		exit(1);
 	    }
-	    debugHandler( buf, got, 0, 0);
+	    iqHandler( buf, got, 0, 0);
 	}
 
 	fclose(in);
