@@ -30,6 +30,8 @@ static int minPacket = 16;
 
 static const char *inputFileName = 0;
 
+static int showHistogram = 0;
+
 static void showHelp( FILE *f)
 {
     fprintf(f, 
@@ -42,6 +44,7 @@ static void showHelp( FILE *f)
 	    "  -i addr | --multicast-interface addr  address of the multicast interface, default 127.0.0.1\n"
 	    "  -m nnnn | --min-packet nnnn           minimum number of pulses for a packet, default 10\n"
 	    "  -r filename | --read-file filename    read from input file instead of radio, for testing\n"
+	    "  -H | --histogram                      show diagnostic histogram\n"
 	    );
 }
 
@@ -214,11 +217,11 @@ static void findPulses( const unsigned char *data, uint32_t len, const float alp
     }
 }
 
-#if 0
 static void debugHistogram( const unsigned char *data, uint32_t len, uint8_t bins, const float alpha)
 {
     unsigned bin[bins];
     unsigned sbin[bins];
+    int havePower = 0;
 
     memset( bin, 0, sizeof(*bin)*bins);
     memset( sbin, 0, sizeof(*sbin)*bins);
@@ -238,19 +241,22 @@ static void debugHistogram( const unsigned char *data, uint32_t len, uint8_t bin
 	if (b > bins-1) b = bins-1;
 	bin[b]++;
 
+	if ( b >= bins/4) havePower++;
+
 	unsigned sb = lowPassPowerSquared*(bins-1);
 	if (sb > bins-1) sb = bins-1;
 	sbin[sb]++;
     }
-    for ( int i = 0; i < bins; i++) {
-	fprintf(stderr,"%5.3f %7u %7u\n", i/(float)bins, bin[i], sbin[i]);
+    if ( havePower > len/128) {
+	for ( int i = 0; i < bins; i++) {
+	    fprintf(stderr,"%5.3f %7u %7u\n", i/(float)bins, bin[i], sbin[i]);
+	}
     }
 }
-#endif
 
 static void iqHandler(const unsigned char *data, uint32_t len, void *ctx, struct rtldev *rtl)
 {
-    //debugHistogram( data, len, 16, 0.2);
+    if ( showHistogram) debugHistogram( data, len, 16, 0.2);
     findPulses( data, len, 0.2);
     sampleCounter += len/2;
 }
@@ -375,10 +381,11 @@ int main( int argc, char **argv)
 	    { "multicast-interface", required_argument, 0, 'i' },
 	    { "min-packet", required_argument, 0, 'm' },
 	    { "read-file", required_argument, 0, 'r' },
+	    { "histogram", no_argument, 0, 'H' },
 	    { 0,0,0,0}
 	};
 
-	int c = getopt_long( argc, argv, "vh?f:a:p:i:m:r:", options, &optionIndex );
+	int c = getopt_long( argc, argv, "vh?Hf:a:p:i:m:r:", options, &optionIndex );
 	if ( c == -1) break;
 
 	switch(c) {
@@ -388,6 +395,9 @@ int main( int argc, char **argv)
 	    return 0;
 	  case 'v':
 	    verbose = 1;
+	    break;
+	  case 'H':
+	    showHistogram = 1;
 	    break;
 	  case 'f':
 	    // set frequency to optarg
