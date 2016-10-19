@@ -8,16 +8,17 @@ MACHINE = $(shell uname -m)
 COMPILER = $(shell $(CC) 2>&1 | ( fgrep -q clang && echo clang || echo gcc ) )
 
 DEBUGFLAGS_gcc = -pg
-DEBUGFLAGS = -g -O0 $(DEBUGFLAGS_$(COMPILER))
+DEBUGFLAGS = -pg -g -O0 $(DEBUGFLAGS_$(COMPILER))
 #DEBUGFLAGS = 
 
 FLOATFLAGS_clang = -ffast-math -O3
-FLOATFLAGS_gcc = -ffast-math
+FLOATFLAGS_gcc = -ffast-math -O3
 FLOATFLAGS_armv7l_gcc = -ftree-vectorize -mfpu=neon 
 FLOATFLAGS = $(FLOATFLAGS_$(MACHINE)_$(COMPILER)) $(FLOATFLAGS_$(COMPILER))
 
-COMPILERFLAGS_gcc = -std=c99 
-COMPILERFLAGS = $(COMPILERFLAGS_$(COMPILER))
+COMPILERFLAGS_gcc = 
+COMPILERFLAGS_clang = 
+COMPILERFLAGS = -std=c99 $(COMPILERFLAGS_$(COMPILER))
 
 LDLIBS += -lm
 
