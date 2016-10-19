@@ -31,6 +31,7 @@ static int minPacket = 16;
 static const char *inputFileName = 0;
 
 static int showHistogram = 0;
+static int showModes = 0;
 
 static void showHelp( FILE *f)
 {
@@ -45,6 +46,7 @@ static void showHelp( FILE *f)
 	    "  -m nnnn | --min-packet nnnn           minimum number of pulses for a packet, default 10\n"
 	    "  -r filename | --read-file filename    read from input file instead of radio, for testing\n"
 	    "  -H | --histogram                      show diagnostic histogram\n"
+	    "  -M | --modes                          show diagnostic modes\n"
 	    );
 }
 
@@ -228,7 +230,7 @@ static void debugHistogram( const unsigned char *data, uint32_t len, uint8_t bin
 
     float s = 0;
 
-    for ( int i = 0; i < len; i += 2) {
+    for ( int i = 0; i < len-1; i += 2) {
 	float I = (data[i]-128)/128.0;
 	float Q = (data[i+1]-128)/128.0;
 	float powerSquared = I*I+Q*Q;
@@ -254,9 +256,68 @@ static void debugHistogram( const unsigned char *data, uint32_t len, uint8_t bin
     }
 }
 
+static void debugModes( const unsigned char *data, uint32_t len)
+{
+    if ( len < 8) return;   // sort of hopeless for small bins
+
+    unsigned samples = len/2;
+
+    unsigned char power[samples];
+
+    for (unsigned s = 0; s < samples; s++) {
+	float I = (data[s]-128)/128.0;     // range -1 to 1
+	float Q = (data[s+1]-128)/128.0;
+
+	power[s] = floorf( hypotf(I,Q) / M_SQRT2 * 255.0);
+    }
+
+    // My initial means are guessed at 1/4 and 3/4 of the range
+    unsigned char m1 = 256/4;
+    unsigned char m2 = 3*256/4;
+    
+    for(unsigned iterations = 1; ; iterations++) {
+	unsigned sum1 = 0, count1 = 0;
+	unsigned sum2 = 0, count2 = 0;
+
+	
+	// Assign each sample to its most likely mode
+	for ( unsigned s = 0; s < samples; s++) {
+	    int p = power[s];
+	    unsigned char d1 = abs( p - m1);  // distance from mode centers
+	    unsigned char d2 = abs( p - m2);
+	    
+	    if ( d1 < d2) {
+		sum1 += p;
+		count1++;
+	    } else {
+		sum2 += p;
+		count2++;
+	    }
+	}
+
+	// Calculate new centers for the modes
+	unsigned char newM1 = count1 ? sum1/count1 : m1;   // If no samples, leave it be
+	unsigned char newM2 = count2 ? sum2/count2 : m2;
+
+	if ( count1 == 0) newM1 = (m1 + newM2)/2;          // Move toward other mode if we didn't get any
+	if ( count2 == 0) newM2 = (m2 + newM1)/2;
+
+	if ( (newM1 == m1 && newM2 == m2) || iterations >= 16) {                 // We converged or overiterated.
+	    fprintf(stderr, "LLOYD %5.3f[%5d] %5.3f[%5d] in %d\n", m1/255.0, count1, m2/255.0, count2, iterations);
+	    break;
+	}
+
+	m1 = newM1;
+	m2 = newM2;
+    }
+
+}
+
 static void iqHandler(const unsigned char *data, uint32_t len, void *ctx, struct rtldev *rtl)
 {
     if ( showHistogram) debugHistogram( data, len, 16, 0.2);
+    if ( showModes) debugModes( data, len);
+
     findPulses( data, len, 0.2);
     sampleCounter += len/2;
 }
@@ -382,10 +443,11 @@ int main( int argc, char **argv)
 	    { "min-packet", required_argument, 0, 'm' },
 	    { "read-file", required_argument, 0, 'r' },
 	    { "histogram", no_argument, 0, 'H' },
+	    { "modes", no_argument, 0, 'M' },
 	    { 0,0,0,0}
 	};
 
-	int c = getopt_long( argc, argv, "vh?Hf:a:p:i:m:r:", options, &optionIndex );
+	int c = getopt_long( argc, argv, "vh?HMf:a:p:i:m:r:", options, &optionIndex );
 	if ( c == -1) break;
 
 	switch(c) {
@@ -398,6 +460,9 @@ int main( int argc, char **argv)
 	    break;
 	  case 'H':
 	    showHistogram = 1;
+	    break;
+	  case 'M':
+	    showModes = 1;
 	    break;
 	  case 'f':
 	    // set frequency to optarg
