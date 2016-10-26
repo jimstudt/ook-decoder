@@ -15,8 +15,8 @@
 int verbose=0;
 
 static time_t oldestDatum = 0;
-static struct datum temperature;
-static struct datum humidity;
+static struct datum temperature[3];
+static struct datum humidity[3];
 static struct datum averageWindSpeed;
 static struct datum gustWindSpeed;
 static struct datum rainfall;
@@ -26,8 +26,12 @@ static struct cdatum windVector;
 
 static void dumpWeather( void)
 {
-    dumpDatum( &temperature, "temperature", "C");
-    dumpDatum( &humidity, "humidity", "%");
+    dumpDatum( &temperature[0], "temperature0", "C");
+    dumpDatum( &temperature[1], "temperature1", "C");
+    dumpDatum( &temperature[2], "temperature2", "C");
+    dumpDatum( &humidity[0], "humidity0", "%");
+    dumpDatum( &humidity[1], "humidity1", "%");
+    dumpDatum( &humidity[2], "humidity2", "%");
     dumpDatum( &averageWindSpeed, "wind", "m/s");
     dumpDatum( &gustWindSpeed, "gust", "m/s");
     dumpDatum( &rainfall, "rainfall", "m");
@@ -36,7 +40,10 @@ static void dumpWeather( void)
     dumpCDatum( &windVector, "wind", "m/s");
 }
 
-static void recordRecent( const char *file, double temp, double hum, double avgWind, double gustWind, 
+static void recordRecent( const char *file, 
+			  double temp0, double temp1, double temp2,  
+			  double hum0, double hum1, double hum2, 
+			  double avgWind, double gustWind, 
 			  double rain,
 			  int batteryLowBits, int windDirectionBits)
 {
@@ -58,8 +65,12 @@ static void recordRecent( const char *file, double temp, double hum, double avgW
 
     FILE *f = fdopen(fd,"w");
     fprintf(f,"{\n");
-    fprintf(f,"\t\"temperature\":%.1f,\n", temp);
-    fprintf(f,"\t\"humidity\":%.1f,\n", hum);
+    fprintf(f,"\t\"temperature0\":%.1f,\n", temp0);
+    fprintf(f,"\t\"temperature1\":%.1f,\n", temp1);
+    fprintf(f,"\t\"temperature2\":%.1f,\n", temp2);
+    fprintf(f,"\t\"humidity0\":%.1f,\n", hum0);
+    fprintf(f,"\t\"humidity1\":%.1f,\n", hum1);
+    fprintf(f,"\t\"humidity2\":%.1f,\n", hum2);
     fprintf(f,"\t\"avgWindSpeed\":%.1f,\n", avgWind);
     fprintf(f,"\t\"gustSpeed\":%.1f,\n", gustWind);
     fprintf(f,"\t\"rainfall\":%.4f,\n", rain);
@@ -118,8 +129,12 @@ static void recordPeriodic( const char *file)
     fprintf(f,"{\n");
     fprintf(f,"\t\"start\":%lld,\n", (long long)oldestDatum);
     fprintf(f,"\t\"end\":%lld,\n", (long long)time(0));
-    recordDatum( f, &temperature, "temperature", 1);
-    recordDatum( f, &humidity, "humidity", 1);
+    recordDatum( f, &temperature[0], "temperature0", 1);
+    recordDatum( f, &temperature[1], "temperature1", 1);
+    recordDatum( f, &temperature[2], "temperature2", 1);
+    recordDatum( f, &humidity[0], "humidity0", 1);
+    recordDatum( f, &humidity[1], "humidity1", 1);
+    recordDatum( f, &humidity[2], "humidity2", 1);
     recordDatum( f, &averageWindSpeed, "avgWindSpeed", 1);
     recordDatum( f, &gustWindSpeed, "gustSpeed", 1);
     recordDatum( f, &rainfall, "rainfall", 1);
@@ -176,8 +191,8 @@ int main( int argc, char **argv)
     const char *periodicFileName = "/tmp/weather";
     int minutes = 5;
 
-    double recentTemp = -500.0;
-    double recentHum = -1;
+    double recentTemp[3] = {-500.0, -500.0, -500.0};
+    double recentHum[3] = {-1,-1,-1};
     double recentWind = -1;
     double recentGust = -1;
     double recentRain = -1;
@@ -338,12 +353,16 @@ case '?':
 			      if (nibble[18] != 0) tempTenthsC *= -1;
 			      int relativeHum = nibble[20]*10 + nibble[19];
 			      if ( verbose) fprintf(stderr,"Temp=%4.1fC Hum=%02d%% %d\n", tempTenthsC/10.0, relativeHum, nibbles);
-			      addSample( &temperature, tempTenthsC/10.0);
-			      addSample( &humidity, relativeHum);
+			      if ( channel <= 2) {
+				  addSample( &temperature[channel], tempTenthsC/10.0);
+				  addSample( &humidity[channel], relativeHum);
+				  recentTemp[channel] = tempTenthsC/10.0;
+				  recentHum[channel] = relativeHum;
+			      } else {
+				  fprintf(stderr,"Bad channel on sensor %04x, channel %d\n", sensorId, channel);
+			      }
 			      if (oldestDatum == 0) oldestDatum = time(0);
 
-			      recentTemp = tempTenthsC/10.0;
-			      recentHum = relativeHum;
 			  } else {
 			      fprintf(stderr,"Bad checksum on sensor %04x\n", sensorId);
 			  }
@@ -421,7 +440,10 @@ case '?':
 
 		if ( verbose) dumpWeather();
 
-		recordRecent( recentFileName, recentTemp, recentHum, recentWind, recentGust, recentRain, recentBattery, recentDirection);
+		recordRecent( recentFileName, 
+			      recentTemp[0], recentTemp[1], recentTemp[2], 
+			      recentHum[0], recentHum[1], recentHum[2], 
+			      recentWind, recentGust, recentRain, recentBattery, recentDirection);
 	    } else {
 		if ( verbose) fprintf(stderr,"ignored %d pulse burst\n", burst->pulses);
 	    }
