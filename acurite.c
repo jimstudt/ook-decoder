@@ -154,7 +154,7 @@ static void writeReport( const struct report *report, const char *template) {
     fprintf(f,"\t\"id\":%d,\n", report->id);
     fprintf(f,"\t\"temperature\":%.1f,\n", (report->temperature - 100.0)/10.0 );
     fprintf(f,"\t\"humidity\":%d,\n", report->humidity);
-    fprintf(f,"\t\"batteryLow\":%d,\n", report->batteryLow);
+    fprintf(f,"\t\"batteryLow\":%d\n", report->batteryLow);
     fprintf(f,"}\n");
     fclose(f);
 
