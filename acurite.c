@@ -184,7 +184,7 @@ int main( int argc, char **argv)
     const char *multicastAddress = "236.0.0.1";
     const char *multicastPort = "3636";
     const char *multicastInterface = "127.0.0.1";
-    const char *recentFileName = "/tmp/current-weather.json";
+    const char *recentFileName = "/tmp/current-weather";
 
     // Handle options
     for(;;) {
