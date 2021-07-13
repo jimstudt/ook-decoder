@@ -76,6 +76,20 @@ static struct report decode_acurite( const struct ook_burst *burst) {
 		
 		state = IDLE;
 
+		if ( bits != 56 ) {
+		    if (verbose) fprintf(stderr, "Not 56 bits\n");
+		    continue;
+		}
+
+		if ( ((((data>>48)&0xff) +
+		       ((data>>40)&0xff) +
+		       ((data>>32)&0xff) +
+		       ((data>>24)&0xff) +
+		       ((data>>16)&0xff) +
+		       ((data>>8)&0xff) ) & 0xff) != ( data & 0xff)) {
+		    if (verbose) fprintf(stderr, "CRC invalid\n");
+		    continue;
+		}
 		const uint8_t chanMap[] = { 3, 0, 2, 1};
 		
 		uint8_t channel = chanMap[ (data>>54) & 0x03];
@@ -86,13 +100,11 @@ static struct report decode_acurite( const struct ook_burst *burst) {
 		
 		if ( mParity != ( (__builtin_popcount( message) + battery) & 1)) {
 		    if ( verbose) fprintf(stderr, "parity error in message code\n");
-		    state = IDLE;
 		    continue;
 		}
 
 		if ( message != 4 || bits != 56) {
 		    if ( verbose) fprintf(stderr, "Not a 592TXR message\n");
-		    state = IDLE;
 		    continue;
 		}
 
@@ -100,7 +112,6 @@ static struct report decode_acurite( const struct ook_burst *burst) {
 		uint8_t hParity = (data>>31) & 1;
 		if ( hParity != (__builtin_popcount( humidity) & 1)) {
 		    if ( verbose) fprintf(stderr, "parity error in humidity\n");
-		    state = IDLE;
 		    continue;
 		}
 
@@ -114,7 +125,6 @@ static struct report decode_acurite( const struct ook_burst *burst) {
 		if ( tHighParity != (__builtin_popcount( tempHigh) & 1) ||
 		     tLowParity != (__builtin_popcount( tempLow) & 1)) {
 		    if ( verbose) fprintf(stderr, "parity error in temperature\n");
-		    state = IDLE;
 		    continue;
 		}
 		if ( verbose) fprintf(stderr, "  chan=%d id=%d bat=%d msg=%d temperature=%d hum=%d\n", channel, id, battery, message, temperature,  humidity);
