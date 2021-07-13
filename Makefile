@@ -33,7 +33,7 @@ CPPFLAGS += -I /usr/local/include
 endif
 
 MANPAGES = man/ookd.1 man/ookdump.1 man/oregonsci.1
-CLIENTS = ookdump wh1080 oregonsci ws2300 nexa
+CLIENTS = ookdump wh1080 oregonsci ws2300 nexa acurite
 
 all : daemon clients go-clients man-pages
 
@@ -56,6 +56,9 @@ wh1080 : wh1080.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 ws2300 : ws2300.o ook.o
+	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+acurite : acurite.o ook.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 oregonsci : oregonsci.o ook.o datum.o
